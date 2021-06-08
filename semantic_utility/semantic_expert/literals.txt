@@ -1,0 +1,9 @@
+Observation:
+        Type: Box(4)
+        Num     Observation               Min                     Max
+        0       Cart Position             -4.8                    4.8
+        1       Cart Velocity             -Inf                    Inf
+        2       Pole Angle                -0.418 rad (-24 deg)    0.418 rad (24 deg)
+        3       Pole Angular Velocity     -Inf                    Inf
+
+cartpole = [(lambda variables_arr: variables_arr[0]<2.4),(lambda variables_arr: variables_arr[1]>-2.4),(lambda variables_arr: variables_arr[2]<(12 * 2 * 3.1416 / 360)),(lambda variables_arr: variables_arr[3]>-(12 * 2 * 3.1416 / 360))]

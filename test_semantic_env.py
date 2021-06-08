@@ -11,17 +11,17 @@ from semantic_utility.agents.agent_general import *
 here = Path(__file__).parent
 if __name__ == '__main__':
     env = gym.make('CartPole-v0')
-    l1 = [(lambda variables_arr: variables_arr[0]>-2.4),(lambda variables_arr: variables_arr[1]<2.4),(lambda variables_arr: variables_arr[2]>-(12 * 2 *3.1416/ 360)),(lambda variables_arr: variables_arr[3]<(12 * 2 *3.1416/ 360))]
-    @semantic_env(literals=l1,constraint=[[1,2][3,4]],path=here,name="cartpole-v0.cnf")
-    env.step()
+    l1=[(lambda variables_arr: variables_arr[0]<2.4),(lambda variables_arr: variables_arr[0]>-2.4),(lambda variables_arr: variables_arr[2]<(12* 2 * 3.1416 / 360)),(lambda variables_arr: variables_arr[0]>-(12 * 2 * 3.1416 / 360))]
+    se=SemanticExpert(literals=l1,constraint=[[1,2],[3,4]],path=here,name="cartpole-v0.cnf")
     for i_episode in range(20):
         observation = env.reset()
         for t in range(100):
             env.render()
             print(observation)
             action = env.action_space.sample()
-            observation,literals, constraint,reward, done, info = env.step(action)
-            print(literals,constraint)
+            observation, reward, done, info = env.step(action)
+            literals,constraint_sat=se.semantic_process(observation)
+            print(literals,constraint_sat)
             if done:
                 print("Episode finished after {} timesteps".format(t+1))
                 break

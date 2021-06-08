@@ -59,7 +59,6 @@ class Constraint_Processor(object):
         #lits = [None] + [self._sdd_mgr.literal(i) for i in range(1, _sdd_mgr.var_count() + 1)]
         wmc = self.sdd_node.wmc(log_mode=False)
         for var in zip(self.sdd_mgr.vars,weights ):
-            print (var)
             wmc.set_literal_weight(var[0],var[1])
             self.sdd_mgr.auto_gc_and_minimize_off()
             wmc.set_literal_weight(-var[0], 1.0 - var[1])
