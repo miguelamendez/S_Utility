@@ -1,4 +1,4 @@
-"""[This should be a wrapper for the environments currently not implemented]"""
+"""[This is the wrapper that defines the semantic expert]"""
 from semantic_utility.utils.constraint_utils import *
 import gym
 class SemanticExpert():

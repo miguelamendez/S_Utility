@@ -1,4 +1,6 @@
 c cnf file created from python list 
-p cnf 4  2
-1 2 0 
-3 4 0 
+p cnf 4  4
+1 0 
+2 0 
+3 0 
+4 0 

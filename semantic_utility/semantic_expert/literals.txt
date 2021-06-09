@@ -1,3 +1,4 @@
+Definition of the cartpole environment
 Observation:
         Type: Box(4)
         Num     Observation               Min                     Max
@@ -5,5 +6,13 @@ Observation:
         1       Cart Velocity             -Inf                    Inf
         2       Pole Angle                -0.418 rad (-24 deg)    0.418 rad (24 deg)
         3       Pole Angular Velocity     -Inf                    Inf
+How the environment ends:
+Literal definitions concidered by cartpole environment = [(lambda variables_arr: variables_arr[0]>2.4),(lambda variables_arr: variables_arr[0]<-2.4),(lambda variables_arr: variables_arr[2]>(12 * 2 * 3.1416 / 360)),(lambda variables_arr: variables_arr[2]<-(12 * 2 * 3.1416 / 360))]
+Constraint for terminating the environment=l1 v l2 v l3 v l4
 
-cartpole = [(lambda variables_arr: variables_arr[0]<2.4),(lambda variables_arr: variables_arr[1]>-2.4),(lambda variables_arr: variables_arr[2]<(12 * 2 * 3.1416 / 360)),(lambda variables_arr: variables_arr[3]>-(12 * 2 * 3.1416 / 360))]
+Now we want  constraints that will help avoid the constraint avobe (l1 v l2 v l3 v l4) 
+
+Some constraints to test:
+Literal definitions
+cartpole = [(lambda variables_arr: variables_arr[0]<1),(lambda variables_arr: variables_arr[0]>-1),(lambda variables_arr: variables_arr[2]<(10 * 2 * 3.1416 / 360)),(lambda variables_arr: variables_arr[2]>-(10 * 2 * 3.1416 / 360)),(lambda variables_arr: abs((variables_arr[1]-variables_arr[3]))<5),[]]
+constraint = [[1,2],[3,4],[5]]
