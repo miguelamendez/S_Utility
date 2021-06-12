@@ -19,7 +19,9 @@ class Agent(object):
                input_dims,
                output_dims,
                dtype,
-               results,
+               path,
+               constraint=[],
+               num_literals=-1,
                learn_epochs=4,
                learn_num_steps=32,
                gamma=0.99,
@@ -89,12 +91,13 @@ class Agent(object):
           self.use_inverse_model = inverse_model
           self.semantic_utility_type=semantic_utility_type
           """[Models used by the agent:]"""
+          enc_state_dims = 512
           if dtype == "Images":
-               self.feature_encoder_model = CNNStateEncoderBaselineNetwork(input_dims)
+               self.feature_encoder_model = CNNStateEncoderBaselineNetwork(input_dims,enc_state_dims)
           elif dtype == "Values":
-               self.feature_encoder_model = LinearStateEncoderBaselineNetwork(input_dims)
-          self.critic_model = LinearValueBaselineNetwork()
-          self.policy= Policy_Model_Wrapper(output_dims)
+               self.feature_encoder_model = LinearStateEncoderBaselineNetwork(input_dims,enc_state_dims)
+          self.critic_model = LinearValueBaselineNetwork(enc_state_dims)
+          self.policy= Policy_Model_Wrapper(input_dims=enc_state_dims,output_dims=output_dims)
           self.device = torch.device('cuda' if use_cuda else 'cpu')
           self.feature_encoder_model = self.feature_encoder_model.to(self.device)
           self.feature_encoder_model_param_list=list(self.feature_encoder_model.parameters())
@@ -103,13 +106,13 @@ class Agent(object):
           self.actor_model = self.policy.policy_model.to(self.device)
           self.actor_model_param_list=list(self.actor_model.parameters())
           if self.use_inverse_model:
-               self.inverse_model = LinearInverseBaselineNetwork(output_dims)
+               self.inverse_model = LinearInverseBaselineNetwork(enc_state_dims*2,output_dims)
                self.inverse_model = self.inverse_model.to(self.device)
                self.inverse_model_param_list = list(self.inverse_model.parameters())
           else:
                self.inverse_model_param_list = []
           if self.use_world_model:
-               self.world = World_Model_Wrapper()
+               self.world = World_Model_Wrapper([enc_state_dims,output_dims])
                self.forward_model = self.world.world_model.to(self.device)
                self.forward_model_param_list = list(self.foward_model.parameters())
           else:
@@ -122,14 +125,13 @@ class Agent(object):
                self.image_model_param_list = []
           if self.use_semantic_model:
                self.semantic = Semantic_Model_Wrapper(
-               input_dims = 512,output_dims=4,path=results)
+               input_dims = [enc_state_dims,output_dims],output_dims=num_literals,path=path,theory=constraint)
                self.semantic_model = self.semantic.model.to(self.device)
                self.semantic_model_param_list = list(self.semantic_model.parameters())
-               #self.memory= ReplayMemoryAgentSafety(batch_size)
           else:
                self.semantic_model_param_list = []
-          self.memory= ReplayMemoryAgent(batch_size)
-          #self.optimizer = optim.Adam(list(self.actor_model.parameters())+list(self.critic_model.parameters())+list(self.feature_encoder_model.parameters()),lr=lr)
+          self.memory= ReplayMemoryAgentSemantic(batch_size)
+          self.optimizer = optim.Adam(list(self.actor_model.parameters())+list(self.critic_model.parameters())+list(self.feature_encoder_model.parameters()),lr=lr)
           self.agent_optimizer = optim.Adam(self.actor_model_param_list+self.critic_model_param_list+self.feature_encoder_model_param_list+self.semantic_model_param_list,lr=0.0003)
           chkpt_dir=os.getcwd()
           self.checkpoint_file = os.path.join(chkpt_dir, 'agent_models')
@@ -197,10 +199,17 @@ class Agent(object):
           value = torch.squeeze(value).item()
           return value
 
-     def remember(self,episode,state,next_state,action,action_log_prob, reward,value, done):
+     def store(self,episode,state,next_state,action,action_log_prob, reward,value, done,literals=[],constraint_sat=[]):
+          #self.store_rl_info(episode,state,next_state,action,action_log_prob, reward,value, done)
+          #self.store_sm_info(state,next_state,action,literals,constraint_sat)
+          self.memory.store_memory( episode,state,next_state,action,action_log_prob, reward,value, done,literals,constraint_sat)
+
+     def store_rl_info(self,episode,state,next_state,action,action_log_prob, reward,value, done):
           self.memory.store_memory( episode,state,next_state,action,action_log_prob, reward,value, done)
-#     def remember_su(self,episode,state,next_state,action,action_log_prob, reward,value,literal_actual_val,constraint_sat, done):
-#          self.memory.store_memory( episode,state,next_state,action,action_log_prob, reward,value,literal_actual_val,constraint_sat,done)
+
+     def store_sm_info(self,state,next_state,action,literals,constraint_sat):
+          self.semantic.memory.store_memory(state,next_state,action,literals,constraint_sat)
+
 ##################################################################################################
 #Loss functions
 
@@ -288,11 +297,11 @@ class Agent(object):
 
 #Agent Learning
 ##################################################################################################
-     def learn_model(self):
+     def learn_models_join(self):
           """[Learning function for the agent working  but missing some parts when model based or semantic utility is used ( finish Implementation only if you already understood the whole code and fill up the missing parts)]
           """
           for _ in range(self.learn_epochs):
-               episode_arr,state_arr, next_state_arr,action_arr, old_probs_arr,reward_arr,values_arr, dones_arr, batches = self.memory.generate_batches()
+               episode_arr,state_arr, next_state_arr,action_arr, old_probs_arr,reward_arr,values_arr, dones_arr,literal_arr,const_arr, batches = self.memory.generate_batches()
                advantage= self.compute_extrinsic_advantage(values_arr,reward_arr, dones_arr)
                values = torch.tensor(values_arr).to(self.device)
                #Second Inner loop samples using batch Indexes
@@ -301,22 +310,93 @@ class Agent(object):
                     enc_states= self.encode_state(states)
                     old_probs = torch.tensor(old_probs_arr[batch]).to(self.device)
                     actions = torch.tensor(action_arr[batch]).to(self.device)
+                    
                     #Actor Loss
                     actor_loss = self.policy.ppo_actor_loss(enc_states,actions,old_probs,advantage[batch])
                     #----------------------------------------------------------------------------------
                     #Critic Loss
                     critic_model_loss = self.critic_model_loss(enc_states,advantage[batch],values[batch])
+                    critic_model_loss = self.critic_model_loss(enc_states,advantage[batch],values[batch])
                     #---------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------
                     # Inverse Model Loss
                     if self.use_inverse_model:
-                         inverse_model_loss=self.inverse_model_loss(state,next_state,action)
+                         inverse_model_loss=self.inverse_model_loss([state,next_state],action)
                     else:
                          inverse_model_loss=0
 # --------------------------------------------------------------------------------
                     #  Semantic Model Loss
                     if self.use_semantic_model:
-                         #semantic_model_loss = self.semantic.deepweights_loss()
+                         literals = torch.tensor(literal_arr[batch]).to(self.device)
+                         literals.long()
+                         literals_int = literals.float()
+                         constraint = torch.tensor(const_arr[batch]).to(self.device)
+                         actions=torch.unsqueeze(actions, 1)
+                         #print("here:",actions)
+                         semantic_model_loss = self.semantic.deepweights_loss([enc_states,actions],literals_int)
+                         print(semantic_model_loss)
+                         #semantic_model_loss = self.semantic.constraint_loss([enc_states,actions],literals_int,constraint)
+                    else:
+                         semantic_model_loss = 0
+# --------------------------------------------------------------------------------
+                    # World Model Loss
+                    if self.use_world_model:
+                         forward_model_loss = self.world.forward_model_loss()
+                    else:
+                         forward_model_loss = 0
+                    # ---------------------------------------------------------------------------------
+                    # Image Model Loss
+                    if self.use_image_model:
+                         image_model_loss = self.image.image_model_loss()
+                    else:
+                         image_model_loss = 0
+                    #----------------------------------------------------------------------------------
+                    #Total Loss
+                    loss = actor_loss+0.5*critic_model_loss+semantic_model_loss
+                    self.agent_optimizer.zero_grad()
+                    #address = "gradients/"+self.get_agent_id()
+                    #make_dot(loss).render(address, format="png")
+                    loss.backward()
+                    self.agent_optimizer.step()
+          self.memory.clear_memory()
+     def learn_models_disjoin(self):
+          """[Learning function for the agent working  we generate several datasets and train each models separately [Not Correctly implemented]          """
+          for _ in range(self.learn_epochs):
+               episode_arr,state_arr, next_state_arr,action_arr, old_probs_arr,reward_arr,values_arr, dones_arr,batches = self.memory.generate_batches()
+               state_s_arr,next_state_s_arr,action_s_arr,literal_s_arr,constraint_s_arr,batches_s =self.semantic.memory.generate_batches()
+               advantage= self.compute_extrinsic_advantage(values_arr,reward_arr, dones_arr)
+               values = torch.tensor(values_arr).to(self.device)
+               #Second Inner loop samples using batch Indexes
+               for batch in batches:
+                    states = state_arr[batch]
+                    enc_states= self.encode_state(states)
+                    old_probs = torch.tensor(old_probs_arr[batch]).to(self.device)
+                    actions = torch.tensor(action_arr[batch]).to(self.device)
+                    
+                    #Actor Loss
+                    actor_loss = self.policy.ppo_actor_loss(enc_states,actions,old_probs,advantage[batch])
+                    #----------------------------------------------------------------------------------
+                    #Critic Loss
+                    critic_model_loss = self.critic_model_loss(enc_states,advantage[batch],values[batch])
+                    critic_model_loss = self.critic_model_loss(enc_states,advantage[batch],values[batch])
+                    #---------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
+                    # Inverse Model Loss
+                    if self.use_inverse_model:
+                         inverse_model_loss=self.inverse_model_loss([state,next_state],action)
+                    else:
+                         inverse_model_loss=0
+# --------------------------------------------------------------------------------
+                    #  Semantic Model Loss
+                    if self.use_semantic_model:
+                         states_s = state_s_arr[batch]
+                         enc_states_s= self.encode_state(states_s)
+                         actions_s = torch.tensor(action_s_arr[batch]).to(self.device)
+                         literals = torch.tensor(literal_s_arr[batch]).to(self.device)
+                         constraint = torch.tensor(constraint_s_arr[batch]).to(self.device)
+                         print("here",literals,constraint)
+                         semantic_model_loss = self.semantic.deepweights_loss([enc_states_s,actions_s],literals,constraint)
+                         #semantic_model_loss = self.semantic.constraint_loss([enc_states,actions],literals_arr,constraint)
                          semantic_model_loss = 0
                     else:
                          semantic_model_loss = 0
@@ -334,6 +414,7 @@ class Agent(object):
                          image_model_loss = 0
                     #----------------------------------------------------------------------------------
                     #Total Loss
+                    print("loss(actor,critic,deepweights):",actor_loss,critic_model_loss,semantic_model_loss)
                     loss = actor_loss+0.5*critic_model_loss+semantic_model_loss
                     self.agent_optimizer.zero_grad()
                     #address = "gradients/"+self.get_agent_id()

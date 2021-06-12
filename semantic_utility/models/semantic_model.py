@@ -23,13 +23,13 @@ directory = os.getcwd()
 
 #Wrapper Class for testing different semantic models
 class Semantic_Model_Wrapper():
-    def __init__(self,input_dims,output_dims,path,batch_size=5,theory=[],chkpt_dir= directory,use_cuda=True):
+    def __init__(self,input_dims,output_dims,path,theory=[],batch_size=5,chkpt_dir= directory,use_cuda=True):
         """[summary]
 
         Args:
-            input_dims   ([type]): [description] . Defaults to
-            output_dims ([type]): [description] . Defaults to
-            arg3 ([type]): [description] . Defaults to
+            input_dims   ([type]): [For deep weights: usually the encoded state + actions] . Defaults to
+            output_dims ([type]): [For deep weights: the probability distribution over the literals] . Defaults to
+            path ([type]): [description] . Inputs and outputs path
             arg4 ([type]): [description] . Defaults to
             """
         super(Semantic_Model_Wrapper, self).__init__()
@@ -67,8 +67,9 @@ class Semantic_Model_Wrapper():
             literals ([type]): [literals (obtained by processing some variables)] . Defaults to
         """
         y_pred=self.model(inputs)
-        y_target =literals
-        loss = MSE(y_pred,y_target)
+        y_target =target
+        loss = nn.MSELoss()
+        loss = loss(y_pred,y_target)
         return loss
     
     def constraint_loss(self,inputs,constraint_sat_target):
@@ -77,36 +78,20 @@ class Semantic_Model_Wrapper():
         loss = MSE(const_pred,const_sat_target)
         return loss
 
-    def compute_semantic_utility_v1(self, pred_enc_next_state, constraint):
+    def compute_semantic_utility(self, inputs):
         """[ Not Implemented] 
         Args:
             arg1 ([type]): [description] . Defaults to
             arg2 ([type]): [description] . Defaults to
             arg3 ([type]): [description] . Defaults to
         """
-        #action_onehot = torch.FloatTensor(len(action), self.output_size).to(self.device)
-        #action_onehot.zero_()
-        #action_onehot.scatter_(1, action.view(len(action), -1), 1)
-        literals_weights= self.model(enc_next_state)
-        
-        semantic_utility = constraint_satisfaction
-        return semantic_utility.data.cpu().numpy()
+        y_pred=self.model(inputs)
+        const_pred=self.const_processor.wmc(y_pred)
+        return const_pred.data.cpu().numpy()
 
-    def compute_semantic_utility_v2(self, action,enc_next_state, constraint):
-        """[Not Implemented] 
-        Args:
-            arg1 ([type]): [description] . Defaults to
-            arg2 ([type]): [description] . Defaults to
-            arg3 ([type]): [description] . Defaults to
-        """
-        #action_onehot = torch.FloatTensor(len(action), self.output_size).to(self.device)
-        #action_onehot.zero_()
-        #action_onehot.scatter_(1, action.view(len(action), -1), 1)
-        literals_weights= self.model([action,enc_next_state])
-        
-        semantic_utility = constraint_satisfaction
-        return semantic_utility.data.cpu().numpy()
 
     def pred_intrinsic_semantic_value(self):
-        """[Optional function - Not Implemented yet]"""
+        """[Optional function - Not Implemented yet 
+        This should aproximate the semantic value wich isgiven the current policy and state what is the value function that we can achieve, 
+        this will required to be aproximated by a neural network]"""
         return value

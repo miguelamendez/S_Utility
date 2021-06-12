@@ -20,7 +20,9 @@ class SemanticExpert():
             literals_data=extra_data
             literals=self.lp.evaluate_literals(literals_data)
         if self.const_flag:
+            #print("deb",literals)
             constraint_sat=self.cp.wmc(literals)
+            #print("deb2",constraint_sat)
             return literals,constraint_sat
         else:
             return literals

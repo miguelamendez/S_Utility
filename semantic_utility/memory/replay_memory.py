@@ -73,7 +73,7 @@ class ReplayMemoryAgent:
         self.dones = []
 
 #Replay Memory for Agent on Safety G	ym environments
-class ReplayMemoryAgentSafety:
+class ReplayMemoryAgentSemantic:
     def __init__(self, batch_size):
         """[Replay Memory used by the agent: Implemented ]
         Args:
@@ -88,6 +88,7 @@ class ReplayMemoryAgentSafety:
         self.values = []
         self.dones = []
         self.literals =[]
+        self.constraint =[]
 
         self.batch_size = batch_size
 
@@ -112,9 +113,10 @@ class ReplayMemoryAgentSafety:
                 np.array(self.values),\
                 np.array(self.dones),\
                 np.array(self.literals),\
+                np.array(self.constraint),\
                 batches
 
-    def store_memory(self, episode,state, next_state,action,action_log_prob, reward, value, done, literals):
+    def store_memory(self, episode,state, next_state,action,action_log_prob, reward, value, done, literals,constraint):
         """[summary]
 
         Args:
@@ -134,6 +136,7 @@ class ReplayMemoryAgentSafety:
         self.values.append(value)
         self.dones.append(done)
         self.literals.append(literals)
+        self.constraint.append(constraint)
 
     def clear_memory(self):
         self.episodes = []
@@ -145,6 +148,7 @@ class ReplayMemoryAgentSafety:
         self.values = []
         self.dones = []
         self.literals = []
+        self.constraint = []
 
 #Replay Memory for Policy Model
 class ReplayMemoryPolicyModel:
@@ -266,17 +270,16 @@ class ReplayMemoryWorldModel:
 #Replay Memory for Semantic Model:
 class ReplayMemorySemanticModel:
     def __init__(self, batch_size):
-        """[Not Implemented correctly]
+        """[Implemented]
 
         Args:
             batch_size ([type]): [description]
         """        
-        self.phi1_state = []
-        self.phi2_state = []
+        self.enc_state = []
+        self.enc_next_state = []
         self.action = []
-        self.action_log_probs = []
-        self.action_hat = []
-        self.action_hat_log_probs = []
+        self.literals = []
+        self.constraint = []
         self.batch_size = batch_size
 
     def generate_batches(self):
@@ -285,20 +288,19 @@ class ReplayMemorySemanticModel:
         Returns:
             [type]: [description]
         """        
-        n_states = len(self.phi1_state)
+        n_states = len(self.enc_state)
         batch_start = np.arange(0, n_states, self.batch_size)
         indices = np.arange(n_states, dtype=np.int64)
         np.random.shuffle(indices)
         batches = [indices[i:i+self.batch_size] for i in batch_start]
-        return np.array(self.phi1_state),\
-                np.array(self.phi2_state),\
+        return np.array(self.enc_state),\
+                np.array(self.enc_next_state),\
                 np.array(self.action),\
-                np.array(self.action_log_probs),\
-                np.array(self.action_hat),\
-                 np.array(self.action_hat_log_probs),\
+                np.array(self.literals),\
+                np.array(self.constraint),\
                 batches
 
-    def store_memory(self,phi1,phi2,action,action_log_probs,action_hat,action_hat_log_probs):
+    def store_memory(self,enc_state,enc_next_state,action,literals,constraint):
         """[summary]
 
         Args:
@@ -309,20 +311,18 @@ class ReplayMemorySemanticModel:
             action_hat ([type]): [description]
             action_hat_log_probs ([type]): [description]
         """        
-        self.phi1_state.append(phi1)
-        self.phi2_state.append(phi2)
+        self.enc_state.append(enc_state)
+        self.enc_next_state.append(enc_next_state)
         self.action.append(action)
-        self.action_log_probs.append(action_log_probs)
-        self.action_hat.append(action_hat)
-        self.action_hat_log_probs.append(action_hat_log_probs)
+        self.literals.append(literals)
+        self.constraint.append(constraint)
 
     def clear_memory(self):
-        self.phi1_state = []
-        self.phi2_state = []
+        self.enc_state = []
+        self.enc_next_state = []
         self.action = []
-        self.action_log_probs = []
-        self.action_hat = []
-        self.action_hat_log_probs = []
+        self.literals = []
+        self.constraint = []
         
 #Replay Memory for Feature Encoder          
 class ReplayMemoryImageModel:

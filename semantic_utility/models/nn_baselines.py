@@ -12,11 +12,11 @@ class Flatten(nn.Module):
         return input.view(input.size(0), -1)
 
 class CNNStateEncoderBaselineNetwork(nn.Module):
-    def __init__(self, input_dims, output_dims=512):
+    def __init__(self, input_dims, output_dims):
         """[Neural Network for processng images]
         Args:
-            input_dims ([tuple]): [dimention of the input] . 
-            output_dims ([type]): [dimention of the output] .  Default to 512
+            input_dims ([tuple]): [dimention of the input size of image] . 
+            output_dims ([type]): [dimention of the output encoded state] 
         """  
         super(CNNStateEncoderBaselineNetwork, self).__init__()
         self.model = nn.Sequential(
@@ -62,12 +62,12 @@ class CNNStateEncoderBaselineNetwork(nn.Module):
         return x
 
 class LinearStateEncoderBaselineNetwork(nn.Module):
-    def __init__(self, input_dims, output_dims=512):
+    def __init__(self, input_dims, output_dims):
         """[Neural Network for processing 1 dimentional data types]
 
         Args:
-            input_dims ([tuple]): [dimention of the input] . 
-            output_dims ([type]): [dimention of the output] .  Default to 512
+            input_dims ([tuple]): [dimention of the input ] . 
+            output_dims ([type]): [dimention of the output encoded state].
         """  
         super(LinearStateEncoderBaselineNetwork, self).__init__()
         self.model =  nn.Sequential(
@@ -93,25 +93,25 @@ class LinearStateEncoderBaselineNetwork(nn.Module):
         return x
 
 class CNNStateDecoderBaselineNetwork(nn.Module):
-    def __init__(self,inputs ):
+    def __init__(self,input_dims,output_dims ):
         super(CNNStateDecoderBaselineNetwork, self).__init__()
         """[not implemented]"""
     def forward(self, x):
         return x
 
 class LinearStateDecoderBaselineNetwork(nn.Module):
-    def __init__(self,inputs ):
+    def __init__(self,input_dims,output_dims ):
         super(LinearStateDecoderBaselineNetwork, self).__init__()
         """[not implemented]"""
     def forward(self, x):
         return x
 
 class LinearActorBaselineNetwork(nn.Module):
-    def __init__(self, output_dims,input_dims=512):
+    def __init__(self,input_dims,output_dims):
         """[Neural Network for choosing actions assumed to be descrete actions]
         Args:
-            input_dims ([tuple]): [dimention of the input] .  Default 512
-            output_dims ([int]) : [dimention of the output]
+            input_dims ([tuple]): [dimention of the input (encoded state)] . 
+            output_dims ([int]) : [dimention of the output (probability distribution over the actions)]
         """  
         super(LinearActorBaselineNetwork, self).__init__()
         self.model = nn.Sequential(
@@ -135,11 +135,11 @@ class LinearActorBaselineNetwork(nn.Module):
         return x
 
 class LinearValueBaselineNetwork(nn.Module):
-    def __init__(self, input_dims=512):
+    def __init__(self, input_dims):
         """[Neural Network for predicting the Value functions]
 
         Args:
-            input_dims ([tuple]): [dimention of the input] .  Default 512
+            input_dims ([tuple]): [dimention of the input (encoded state)] .
         """  
         super(LinearValueBaselineNetwork, self).__init__()
         self.model = nn.Sequential(
@@ -167,7 +167,7 @@ class LinearActionValueBaselineNetwork(nn.Module):
         """[Neural Network for calculating the Action-Value function]
 
         Args:
-            input_dims ([tuple]): [dimention of the input] . 
+            input_dims ([tuple]): [dimention of the input (encoded state,action)] . 
         """  
         super(LinearActionValueBaselineNetwork, self).__init__()
         self.model = nn.Sequential(
@@ -193,7 +193,7 @@ class LinearActionValueBaselineNetwork(nn.Module):
 
 class LinearInverseBaselineNetwork(nn.Module):
 
-    def __init__(self, output_dims, input_dims=1024):
+    def __init__(self, input_dims,output_dims):
         """[Neural Network for defining an Inverse Model]
         Args:
             input_dims ([tuple]): [dimention of the input] . The input size is equal to the encoded_state x2
@@ -227,7 +227,7 @@ class LinearInverseBaselineNetwork(nn.Module):
         return x
 
 class ForwardICMBaselineNetwork(nn.Module):
-    def __init__(self, action_dims,enc_state_dims=512,use_cuda=True):
+    def __init__(self, input_dims,use_cuda=True):
         super(ForwardICMBaselineNetwork, self).__init__()
         """[Simple Forward Model used in the Curiosity paper , it has a resnet and 2 forward nets. Modified from source: https://github.com/jcwleo/curiosity-driven-exploration-pytorch]
         Args:
@@ -235,6 +235,7 @@ class ForwardICMBaselineNetwork(nn.Module):
             enc_state_dims ([int]): [action_dims]
             
         """
+        enc_state_dims,action_dims=input_dims
         self.device = torch.device('cuda' if use_cuda else 'cpu')
 
         self.residual = [nn.Sequential(
@@ -276,25 +277,18 @@ class ForwardICMBaselineNetwork(nn.Module):
         return x
 
 class ForwardDWMBaselineNetwork(nn.Module):
-    def __init__(self,inputs ):
+    def __init__(self,input_dims ):
         super(ForwardDWMBaselineNetwork, self).__init__()
         """[not implemented]"""
-    def forward(self, x):
-        return x
+    def forward(self, inputs):
+        return outputs
 
 class ImageBaselineNetwork(nn.Module):
-    def __init__(self,inputs ):
+    def __init__(self,input_dims,output_dims ):
         super(ImageBaselineNetwork, self).__init__()
         """[not implemented]"""
-    def forward(self, x):
-        return x
-
-class DeepWeightsDiscreteBaselineNetwork(nn.Module):
-    def __init__(self,output_dims,inputs_dims=512 ):
-        super(DeepWeightsDiscreteBaselineNetwork, self).__init__()
-        """[not implemented]"""
-    def forward(self, x):
-        return x
+    def forward(self, inputs):
+        return outputs
 
 class DeepWeightNetwork(nn.Module):
     def __init__(self, input_dims,output_dims):
@@ -303,11 +297,12 @@ class DeepWeightNetwork(nn.Module):
             input_dims ([tuple]): [dimention of the input] . The input size is equal to the encoded_state+action
             outpuit_dims ([type]): [dimention of the output deep weights] .  The output size is equal to the number of literals
         """ 
+        enc_state_dims,action_dims=input_dims
         super(DeepWeightNetwork, self).__init__()
         self.model =  nn.Sequential(
-            nn.Linear(input_dims, 128),
+            nn.Linear(enc_state_dims+1, 256),
             nn.ReLU(),
-            nn.Linear(128, 256),
+            nn.Linear(256, 256),
             nn.ReLU(),
             nn.Linear(256,output_dims),
             nn.Softmax(dim=-1)
@@ -326,6 +321,6 @@ class DeepWeightNetwork(nn.Module):
             enc_n_state ([tensor]): [Next State given by the environment] .
         """  
         enc_state, action = inputs
-        x = torch.cat((enc_state, action), 1)
-        x = self.model(x)
-        return x
+        outputs = torch.cat((enc_state, action), 1)
+        outputs = self.model(outputs)
+        return outputs

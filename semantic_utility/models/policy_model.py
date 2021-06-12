@@ -14,7 +14,7 @@ directory = os.getcwd()
 
 #Wrapper Class for testing different policy models
 class Policy_Model_Wrapper():
-	def __init__(self, output_dims,input_dims=512,batch_size=5,lr=.0003,chkpt_dir= directory,use_gae=True,use_cuda=True):
+	def __init__(self, input_dims,output_dims,batch_size=5,lr=.0003,chkpt_dir= directory,use_gae=True,use_cuda=True):
 		"""[This class contains the actor and its loss function which currently is assumed to be ppo for actor]
 
 		Args:
@@ -27,7 +27,7 @@ class Policy_Model_Wrapper():
 		super(Policy_Model_Wrapper, self).__init__()
 		self.checkpoint_file = os.path.join(chkpt_dir, 'policy_model')
 		self.memory= ReplayMemoryPolicyModel(batch_size)
-		self.policy_model = LinearActorBaselineNetwork(output_dims)
+		self.policy_model = LinearActorBaselineNetwork(input_dims,output_dims)
 		
 		#Objective Functions Hyperparameters:
 		

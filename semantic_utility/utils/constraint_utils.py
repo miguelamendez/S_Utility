@@ -27,7 +27,7 @@ class Constraint_Processor(object):
             literal_arr = is an array of functions usually lambdas defined over the variables_arr
             Example:l1 = [(lambda variables_arr: variables_arr[0]<0),(lambda variables_arr: variables_arr[0]>1),(lambda variables_arr: 0<=variables_arr[0]<=1),(lambda variables_arr: variables_arr[0]==1),(lambda variables_arr: variables_arr[0]==variables_arr[1])]
         """
-        print(path)
+        #print(path)
         self.cnf_prcss =CNF_Utils()
         if len(formula)!=0:
             formula_path="inputs/"+formula_name

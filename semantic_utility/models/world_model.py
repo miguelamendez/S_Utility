@@ -16,7 +16,7 @@ directory = os.getcwd()
 
 #Wrapper Class for testing different world models
 class World_Model_Wrapper():
-	def __init__(self, output_dims,input_dims=512,batch_size=4,lr=.0003,chkpt_dir= directory,use_cuda=True):
+	def __init__(self, input_dims,output_dims,batch_size=4,lr=.0003,chkpt_dir= directory,use_cuda=True):
 		"""[summary]
 		Args:
 			input_dims ([type]): [tipicaly actions dim, assumend to be descrete] . 
@@ -27,7 +27,7 @@ class World_Model_Wrapper():
 		"""  
 		super(World_Model_Wrapper, self).__init__()
 		self.checkpoint_file = os.path.join(chkpt_dir, 'world_model')
-		self.world_model =ForwardICMBaselineNetwork(output_dims)
+		self.world_model =ForwardICMBaselineNetwork(input_dims,output_dims)
 		self.memory= ReplayMemoryWorldModel(batch_size,model_type)
 		self.input_dims=input_dims
 

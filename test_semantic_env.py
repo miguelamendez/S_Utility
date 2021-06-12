@@ -11,7 +11,7 @@ from semantic_utility.agents.agent_general import *
 here = Path(__file__).parent
 if __name__ == '__main__':
     env = gym.make('CartPole-v0')
-    l1=[(lambda variables_arr: variables_arr[0]<2.4),(lambda variables_arr: variables_arr[0]>-2.4),(lambda variables_arr: variables_arr[2]<(12* 2 * 3.1416 / 360)),(lambda variables_arr: variables_arr[0]>-(12 * 2 * 3.1416 / 360))]
+    l1=[(lambda variables_arr: variables_arr[0]<.5),(lambda variables_arr: variables_arr[0]>-.5),(lambda variables_arr: variables_arr[2]<(5* 2 * 3.1416 / 360)),(lambda variables_arr: variables_arr[2]>-(5 * 2 * 3.1416 / 360))]
     #l1 = [(lambda variables_arr: variables_arr[0]<1),(lambda variables_arr: variables_arr[0]>-1),(lambda variables_arr: variables_arr[2]<(10 * 2 * 3.1416 / 360)),(lambda variables_arr: variables_arr[2]>-(10 * 2 * 3.1416 / 360)),(lambda variables_arr: abs((variables_arr[1]-variables_arr[3]))<5)]
     constraint = [[1],[2],[3],[4]]
     se=SemanticExpert(literals=l1,constraint=constraint,path=here,name="cartpole-v0.cnf")
