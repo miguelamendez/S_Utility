@@ -22,7 +22,7 @@ if __name__ == '__main__':
     """
     TRAIN_STEPS = 20
     BATCH_SIZE = 5
-    N_GAMES = 200
+    N_GAMES = 3
     learn_iters = 0
     avg_score = 0
     n_steps = 0

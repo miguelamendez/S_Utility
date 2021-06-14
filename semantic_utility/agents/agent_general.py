@@ -131,7 +131,7 @@ class Agent(object):
           else:
                self.semantic_model_param_list = []
           self.memory= ReplayMemoryAgentSemantic(batch_size)
-          self.optimizer = optim.Adam(list(self.actor_model.parameters())+list(self.critic_model.parameters())+list(self.feature_encoder_model.parameters()),lr=lr)
+          #self.optimizer = optim.Adam(list(self.actor_model.parameters())+list(self.critic_model.parameters())+list(self.feature_encoder_model.parameters()),lr=lr)
           self.agent_optimizer = optim.Adam(self.actor_model_param_list+self.critic_model_param_list+self.feature_encoder_model_param_list+self.semantic_model_param_list,lr=0.0003)
           chkpt_dir=os.getcwd()
           self.checkpoint_file = os.path.join(chkpt_dir, 'agent_models')
@@ -300,6 +300,10 @@ class Agent(object):
      def learn_models_join(self):
           """[Learning function for the agent working  but missing some parts when model based or semantic utility is used ( finish Implementation only if you already understood the whole code and fill up the missing parts)]
           """
+          #print("begining:")
+          #for name,param in self.semantic_model.named_parameters():
+               #if param.requires_grad:
+                    #print(name,param.data)
           for _ in range(self.learn_epochs):
                episode_arr,state_arr, next_state_arr,action_arr, old_probs_arr,reward_arr,values_arr, dones_arr,literal_arr,const_arr, batches = self.memory.generate_batches()
                advantage= self.compute_extrinsic_advantage(values_arr,reward_arr, dones_arr)
@@ -334,7 +338,7 @@ class Agent(object):
                          actions=torch.unsqueeze(actions, 1)
                          #print("here:",actions)
                          semantic_model_loss = self.semantic.deepweights_loss([enc_states,actions],literals_int)
-                         print(semantic_model_loss)
+                         #print(semantic_model_loss)
                          #semantic_model_loss = self.semantic.constraint_loss([enc_states,actions],literals_int,constraint)
                     else:
                          semantic_model_loss = 0
@@ -358,6 +362,10 @@ class Agent(object):
                     #make_dot(loss).render(address, format="png")
                     loss.backward()
                     self.agent_optimizer.step()
+          #print("End")
+          #for name,param in self.semantic_model.named_parameters():
+               #if param.requires_grad:
+                    #print(name,param.data)
           self.memory.clear_memory()
      def learn_models_disjoin(self):
           """[Learning function for the agent working  we generate several datasets and train each models separately [Not Correctly implemented]          """

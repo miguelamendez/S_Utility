@@ -23,7 +23,7 @@ directory = os.getcwd()
 
 #Wrapper Class for testing different semantic models
 class Semantic_Model_Wrapper():
-    def __init__(self,input_dims,output_dims,path,theory=[],batch_size=5,chkpt_dir= directory,use_cuda=True):
+    def __init__(self,input_dims,output_dims,path,theory=[],batch_size=20,chkpt_dir= directory,use_cuda=True):
         """[summary]
 
         Args:
