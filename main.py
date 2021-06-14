@@ -57,6 +57,7 @@ if __name__ == '__main__':
 		#print(env.observation_space,state.shape)
 		done = False
 		score = 0
+
 		while not done:
 			#Choose Action-----------------------------------------------------------------------
 			action, action_log_prob = agent.choose_action(state)
@@ -65,14 +66,18 @@ if __name__ == '__main__':
 			n_steps += 1
 			score += reward
 			agent.remember(i, state, next_state, action, action_log_prob, reward, value, done)
+			
 			if n_steps % TRAIN_STEPS == 0:
 				agent.learn_model()
 				learn_iters += 1
 			state = next_state
+		
 		score_history.append(score)
 		avg_score = np.mean(score_history[-100:])
 		if avg_score > best_score:
 			best_score = avg_score
+		
 		print('episode', i, 'score %.1f' % score, 'avg score %.1f' % avg_score, 'time_steps', n_steps, 'learning_steps', learn_iters)
 		x = [i+1 for i in range(len(score_history))]
+	
 	plot_learning_curve(x, score_history, figure_file)
