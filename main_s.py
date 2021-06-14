@@ -1,14 +1,19 @@
 """[Main file: used for training Agents : Contains an environment and an agent]
 """
-from itertools import count
+
 import numpy as np
 import gym
+
+from itertools import count
 from semantic_utility.utils import *
 from semantic_utility.agents.agent_general import *
 from semantic_utility.semantic_expert.semantic_expert_envs import *
 #from semantic_utility.environments.env_atari import *
 #from semantic_utility.environments.env_safety_gym import *
+
 here = Path(__file__).parent
+
+
 if __name__ == '__main__':
     #Value Environments----------------------------------------
     DATA_TYPE="Values"
@@ -27,12 +32,13 @@ if __name__ == '__main__':
     avg_score = 0
     n_steps = 0
     
-    """Defining expert"""
+    # Expert definition
     literals=[(lambda variables_arr: variables_arr[0]<.5),(lambda variables_arr: variables_arr[0]>-.5),(lambda variables_arr: variables_arr[2]<(5* 2 * 3.1416 / 360)),(lambda variables_arr: variables_arr[2]>-(5 * 2 * 3.1416 / 360))]
     num_literals=len(literals)
     constraint = [[1],[2],[3],[4]]
     s_expert=SemanticExpert(literals=literals,constraint=constraint,path=here,name="cartpole-v0.cnf")
-    """Defining agent"""
+
+    # Agent definition
     agent = Agent(input_dims=4,output_dims=env.action_space.n,dtype=dtype,path=here,num_literals=num_literals)
     env_name = env.unwrapped.spec.id
     print(agent.get_agent_id())

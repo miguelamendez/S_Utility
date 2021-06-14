@@ -1,13 +1,17 @@
 """[Main file: used for training Agents : Contains an environment and an agent]
 """
-from itertools import count
+
 import numpy as np
 import gym
+
+from itertools import count
 from semantic_utility.utils import *
 from semantic_utility.agents.agent_general import *
 #from semantic_utility.environments.env_atari import *
 #from semantic_utility.environments.env_safety_gym import *
+
 here = Path(__file__).parent
+
 if __name__ == '__main__':
 	#Value Environments----------------------------------------
 	DATA_TYPE="Values"
