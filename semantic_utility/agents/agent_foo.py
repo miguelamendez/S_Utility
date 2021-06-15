@@ -2,16 +2,25 @@
 """
 import os
 import torch
+import torch.nn as nn
+
 from collections import namedtuple
 from replay_memory import *
+
 from semantic_utility.models.semantic_model import *
 from semantic_utility.models.policy_model import *
 from semantic_utility.models.world_model import *
 from semantic_utility.models.image_model import *
 from semantic_utility.models.nn_baselines import *
 from semantic_utility.utils.dl_utils import *
-import torch.nn as nn
+
 class Agent(object):
+	"""[summary]
+
+	Args:
+		object ([type]): [description]
+	"""
+	
 	def __init__(
 			self,
 			input_dims,
@@ -37,54 +46,58 @@ class Agent(object):
 			image_model=False,
 			semantic_utility_type ="semantic_reward",
 			use_cuda=False):
-		"""[Generic Agent: This wrapper allows us to define an RL agent which can be of two categories (Model Based, Model Free), is model based we can choose the  world model. The code will change in future versions for making it more modular ]
+			#
+		"""[Generic Agent: This wrapper allows us to define an RL agent which can be of one two categories (Model Based, Model Free). 
+		    If it is model based we can choose the  world model. The code will change in future versions for making it more modular]
+
 		Args:
-			input_dims ([array]): [The dimentions of the observations given by the environment] . 
-			output_dims ([int]): [The dimentions of the action space (Current implementation only supports descrete actions)] . 
-			dtype (str) : [The datatype of the input this is use to define the feature encoder]
-			learn_epochs([int]): [The number of epochs used by the training of the agent] . Defaults to 4
-			learn_num_steps([]): [] . Defaults to 32
-			([]): [] . Defaults to .99
-			([]): [] . Defaults to .95
-			([]): [] . Defaults to True
-			([]): [] . Defaults to .1
-			([]): [] . Defaults to .0001
-			([]): [] . Defaults to .0001
-			([]): [] . Defaults to .0001
-			([]): [] . Defaults to .0001
-			([]): [] . Defaults to .01
-			([]): [] . Defaults to 128
-			([]): [] . Defaults to .01
-			([]): [] . Defaults to .01
-			([]): [] . Defaults to a2c
-			([]): [] . Defaults to curiosity
-			([]): [] . Defaults to dwmc
-			semantic_utility_type ([str]): [How the semantic model will affect the policy rewards . Options --> semantic_reward , semantic_weight] . Defaults to semantic_reward
-			([]): [] . Defaults to True
-			
+			input_dims (int): [The dimensions of the observations given by the environment]
+			output_dims (int): [The dimensions of the action space (Current implementation only supports discrete actions)]
+			dtype (str): [The datatype of the input this is use to define the feature encoder]
+			learn_epochs (int, optional): [The number of epochs used by the training of the agent]. Defaults to 4.
+			learn_num_steps (int, optional): [description]. Defaults to 32.
+			gamma (float, optional): [description]. Defaults to 0.99.
+			gae_lambda (float, optional): [description]. Defaults to 0.95.
+			use_gae (bool, optional): [description]. Defaults to True.
+			policy_clip (float, optional): [description]. Defaults to 0.1.
+			lr ([type], optional): [description]. Defaults to 1e-4.
+			policy_learning_rate ([type], optional): [description]. Defaults to 1e-4.
+			world_learning_rate ([type], optional): [description]. Defaults to 1e-4.
+			semantic_learning_rate ([type], optional): [description]. Defaults to 1e-4.
+			entropy_coef (float, optional): [description]. Defaults to 0.01.
+			batch_size (int, optional): [description]. Defaults to 5.
+			world_eta (float, optional): [description]. Defaults to 0.01.
+			semantic_eta (float, optional): [description]. Defaults to 0.01.
+			world_model (bool, optional): [description]. Defaults to False.
+			inverse_model (bool, optional): [description]. Defaults to False.
+			semantic_model (bool, optional): [description]. Defaults to False.
+			image_model (bool, optional): [description]. Defaults to False.
+			semantic_utility_type (str, optional): [How the semantic model will affect the policy rewards . Options --> semantic_reward , semantic_weight]. Defaults to "semantic_reward".
+			use_cuda (bool, optional): [description]. Defaults to False.
 		"""
-		"""[Parameters]"""
-		self.input_dims=input_dims
-		self.output_dims=output_dims
+		# [Parameters]
+		self.input_dims = input_dims
+		self.output_dims = output_dims
 		self.dtype = dtype
-		self.learn_epochs=learn_epochs
-		self.learn_num_steps=learn_num_steps
-		self.gamma=gamma
-		self.gae_lambda=gae_lambda
-		self.policy_clip=policy_clip
-		self.policy_learning_rate=policy_learning_rate
-		self.world_learning_rate=world_learning_rate
-		self.semantic_learning_rate=semantic_learning_rate
-		self.entropy_coef=entropy_coef
-		self.batch_size=batch_size
-		self.world_eta=world_eta
-		self.semantic_eta=semantic_eta
-		self.use_world_model=world_model
-		self.use_semantic_model=semantic_model
-		self.use_image_model=image_model
+		self.learn_epochs = learn_epochs
+		self.learn_num_steps = learn_num_steps
+		self.gamma = gamma
+		self.gae_lambda = gae_lambda
+		self.policy_clip = policy_clip
+		self.policy_learning_rate = policy_learning_rate
+		self.world_learning_rate = world_learning_rate
+		self.semantic_learning_rate = semantic_learning_rate
+		self.entropy_coef = entropy_coef
+		self.batch_size = batch_size
+		self.world_eta = world_eta
+		self.semantic_eta = semantic_eta
+		self.use_world_model = world_model
+		self.use_semantic_model = semantic_model
+		self.use_image_model = image_model
 		self.use_inverse_model = inverse_model
-		self.semantic_utility_type=semantic_utility_type
-		"""[Models  used by the agent:]"""
+		self.semantic_utility_type = semantic_utility_type
+
+		# [Models  used by the agent:]
 		if dtype == "Images":
 			self.feature_encoder_model = CNNStateEncoderBaselineNetwork(input_dims)
 		elif dtype == "Values":
@@ -128,7 +141,9 @@ class Agent(object):
 		self.agent_optimizer = optim.Adam(self.actor_model_param_list+self.critic_model_param_list+self.feature_encoder_model_param_list,lr=0.0003)
 		chkpt_dir=os.getcwd()
 		self.checkpoint_file = os.path.join(chkpt_dir, 'agent_models')
+
 ##################################################################################################
+
 	"""[Agent functions are devided agent model functions,  loss functions , Advantage functions and  learning function. If not implemented it will have a comment inside]"""
 	def  get_agent_id(self):
 		"""[Function that generates a name depending on the models used by the agent]
@@ -143,7 +158,7 @@ class Agent(object):
 			name_id =name_id+"_image_model"
 		return name_id
 
-	def encode_state(self,state):
+	def encode_state(self, state):
 		"""[Function for encoding the state using the feature encoder model]
 		Args:
 			state ([ Gym type]): [state from the environment] . 
@@ -154,7 +169,7 @@ class Agent(object):
 		enc_state = self.feature_encoder_model(state)
 		return enc_state
 
-	def choose_action(self,state):
+	def choose_action(self, state):
 		"""[Function for choosing an Action using the actor model from Policy_Model wrapper]
 		Args:
 			state ([ Gym type]): [state extracted from the environment] . 
@@ -170,7 +185,7 @@ class Agent(object):
 		action = torch.squeeze(action).item()
 		return action , action_log_prob
 
-	def pred_action(self,state,next_state):
+	def pred_action(self, state, next_state):
 		"""[Function for predicting the action performed by the policy using the inverse  model ]
 		Args:
 			state ([ Gym type]): [state extracted from the environment] . 
@@ -192,8 +207,8 @@ class Agent(object):
 		value = torch.squeeze(value).item()
 		return value
 
-	def remember(self,episode,state,next_state,action,action_log_prob, reward,value, done):
-		self.memory.store_memory( episode,state,next_state,action,action_log_prob, reward,value, done)
+	def remember(self, episode, state, next_state, action, action_log_prob, reward, value, done):
+		self.memory.store_memory(episode, state, next_state, action, action_log_prob, reward, value, done)
 ##################################################################################################
 #Loss functions
 
@@ -272,10 +287,14 @@ class Agent(object):
 
 	def advantage_semantic_model(self,rewards,values,dones):
 		"""[Advantage function for Semantic Utility when is used as a reward not Implemented yet]
+
 		Args:
-			arg1 ([type]): [description] . Defaults to
-			arg2 ([type]): [description] . Defaults to
-			arg3 ([type]): [description] . Defaults to
+			rewards ([type]): [description]
+			values ([type]): [description]
+			dones ([type]): [description]
+
+		Returns:
+			[type]: [description]
 		"""
 		return advantage.detach().numpy()
 
