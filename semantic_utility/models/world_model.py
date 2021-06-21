@@ -27,7 +27,7 @@ class World_Model_Wrapper():
 		"""  
 		super(World_Model_Wrapper, self).__init__()
 		self.checkpoint_file = os.path.join(chkpt_dir, 'world_model')
-		self.world_model =ForwardICMBaselineNetwork(input_dims,output_dims)
+		self.model =ForwardICMBaselineNetwork(input_dims,output_dims)
 		self.memory= ReplayMemoryWorldModel(batch_size,model_type)
 		self.input_dims=input_dims
 
@@ -38,7 +38,7 @@ class World_Model_Wrapper():
 			arg2 ([type]): [description] . Defaults to
 			arg3 ([type]): [description] . Defaults to
 		"""
-		torch.save(self.world_model.state_dict(), self.checkpoint_file)
+		torch.save(self.model.state_dict(), self.checkpoint_file)
 
 	def load_checkpoint(self):
 		"""[Load models]
@@ -47,9 +47,9 @@ class World_Model_Wrapper():
 			arg2 ([type]): [description] . Defaults to
 			arg3 ([type]): [description] . Defaults to
 		"""
-		self.world_model.load_state_dict(torch.load(self.checkpoint_file))
+		self.model.load_state_dict(torch.load(self.checkpoint_file))
 
-	def forward_model_loss(self):
+	def model_loss(self):
 		"""[Not Implemented yet]
 		Args:
 			arg1 ([type]): [description] . Defaults to
@@ -58,7 +58,7 @@ class World_Model_Wrapper():
 		"""
 		return loss
 
-	def compute_world_reward(self, state, next_state, action):
+	def compute_intrinsic_reward(self, state, next_state, action):
 		"""[Compute Intrinsic Reward like in curiosity paper for world model. Implemented but not tested may be wrong]
 		Args:
 			arg1 ([type]): [description] . Defaults to
@@ -71,10 +71,10 @@ class World_Model_Wrapper():
 		#action_onehot = torch.FloatTensor(len(action), self.output_size).to(self.device)
 		#action_onehot.zero_()
 		#action_onehot.scatter_(1, action.view(len(action), -1), 1)
-		real_next_state_feature, pred_next_state_feature, pred_action = self.world_model([state, next_state, action])
+		real_next_state_feature, pred_next_state_feature, pred_action = self.model([state, next_state, action])
 		intrinsic_reward = self.world_eta * F.mse_loss(real_next_state_feature, pred_next_state_feature, reduction='none').mean(-1)
 		return intrinsic_reward.data.cpu().numpy()
 
-	def pred_intrinsic_world_value(self):
+	def pred_intrinsic_value(self):
 		"""[Optional function - Not Implemented yet]"""
 		return value

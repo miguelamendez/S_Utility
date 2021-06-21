@@ -28,7 +28,7 @@ class Image_Model_Wrapper():
 		"""  
 		super(Image_Model_Wrapper, self).__init__()
 		self.checkpoint_file = os.path.join(chkpt_dir, 'image_model')
-		self.image_model =ImageBaselineNetwork(output_dims)
+		self.model =ImageBaselineNetwork(output_dims)
 		self.memory= ReplayMemoryImageModel(batch_size)
 		self.input_dims=input_dims
 
@@ -50,7 +50,7 @@ class Image_Model_Wrapper():
 		"""
 		self.load_state_dict(torch.load(self.checkpoint_file))
 
-	def image_model_loss(self):
+	def model_loss(self):
 		"""[Not Implemented yet]
 
 		Args:
@@ -60,7 +60,7 @@ class Image_Model_Wrapper():
 		"""
 		return loss
 
-	def compute_intrinsic_image_reward(self, literals,state, next_state, action):
+	def compute_intrinsic_reward(self, literals,state, next_state, action):
 		"""[Optional IGNORE FOR THE SEMANTIC UTILITY PAPER not Implemented]
 		Args:
 			arg1 ([type]): [description] . Defaults to
@@ -69,6 +69,6 @@ class Image_Model_Wrapper():
 		"""
 		return intrinsic_image_reward.data.cpu().numpy()
 
-	def pred_intrinsic_image_value(self):
+	def pred_intrinsic_value(self):
 		"""[Optional function - Not Implemented yet]"""
 		return value

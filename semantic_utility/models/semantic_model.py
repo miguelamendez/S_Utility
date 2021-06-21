@@ -89,8 +89,7 @@ class Semantic_Model_Wrapper():
         const_pred=self.const_processor.wmc(y_pred)
         return const_pred.data.cpu().numpy()
 
-
-    def pred_intrinsic_semantic_value(self):
+    def pred_intrinsic_value(self):
         """[Optional function - Not Implemented yet 
         This should aproximate the semantic value wich isgiven the current policy and state what is the value function that we can achieve, 
         this will required to be aproximated by a neural network]"""

@@ -120,7 +120,7 @@ class Agent(object):
           
           # Actor model
           self.policy= Policy_Model_Wrapper(input_dims=enc_state_dims, output_dims=output_dims)
-          self.actor_model = self.policy.policy_model.to(self.device)
+          self.actor_model = self.policy.model.to(self.device)
           self.actor_model_param_list=list(self.actor_model.parameters())
           
           # Inverse model
@@ -134,7 +134,7 @@ class Agent(object):
           # World model
           if self.use_world_model:
                self.world = World_Model_Wrapper([enc_state_dims,output_dims])
-               self.forward_model = self.world.world_model.to(self.device)
+               self.forward_model = self.world.model.to(self.device)
                self.forward_model_param_list = list(self.foward_model.parameters())
           else:
                self.forward_model_param_list = []
@@ -142,7 +142,7 @@ class Agent(object):
           # Image model
           if self.use_image_model:
                self.image = Image_Model_Wrapper()
-               self.image_model = self.image.image_model.to(self.device)
+               self.image_model = self.image.model.to(self.device)
                self.image_model_param_list = list(self.image_model.parameters())
           else:
                self.image_model_param_list = []
@@ -253,11 +253,9 @@ class Agent(object):
 
 
      def pred_state_value(self,state):
-          """[Function for predicting the action performed by the policy using the inverse  model ]
-          This function seems to be wrong. Or at least the OG documentation is wrong.
+          """[Function for predicting the state value (of extrinsic reward) using the critic network]
           Args:
                state ([ Gym type]): [state extracted from the environment] . 
-               next_state ([ Gym type]): [ next state extracted from the environment] . 
           """
           enc_state = self.encode_state(state)
           value = self.critic_model(enc_state)
@@ -303,7 +301,7 @@ class Agent(object):
 
 
      def inverse_model_loss(self, state, next_state, action):
-          """Loss function for the inverse model not tested. Cross-entropy of the 
+          """Loss function for the inverse model not tested. Cross-entropy o
 
           Args:
               state ([type]): The original state of the environment
@@ -314,7 +312,10 @@ class Agent(object):
               float: The cross-entropy loss of the predicted action versus the actual one.
           """
           pred_action = self.pred_action(self, state, next_state)
-          return nn.CrossEntropyLoss(pred_action, action)
+          loss=nn.CrossEntropyLoss()
+          one_hot_action = one_hot_encoder(action,len(pred_action))
+          inverse_loss=loss(pred_action,one_hot_action)
+          return inverse_loss
 
 
 ##################################################################################################
@@ -414,7 +415,7 @@ class Agent(object):
                     actions = torch.tensor(action_arr[batch]).to(self.device)
                     
                     # Actor Loss
-                    actor_loss = self.policy.ppo_actor_loss(enc_states,actions,old_probs,advantage[batch])
+                    actor_loss = self.policy.model_ppo_loss(enc_states,actions,old_probs,advantage[batch])
                     
                     # Critic Loss
                     critic_model_loss = self.critic_model_loss(enc_states,advantage[batch],values[batch])
@@ -488,7 +489,7 @@ class Agent(object):
                     actions = torch.tensor(action_arr[batch]).to(self.device)
                     
                     #Actor Loss
-                    actor_loss = self.policy.ppo_actor_loss(enc_states,actions,old_probs,advantage[batch])
+                    actor_loss = self.policy.model_ppo_loss(enc_states,actions,old_probs,advantage[batch])
                     #----------------------------------------------------------------------------------
                     #Critic Loss
                     critic_model_loss = self.critic_model_loss(enc_states,advantage[batch],values[batch])
@@ -517,13 +518,13 @@ class Agent(object):
 # --------------------------------------------------------------------------------
                     # World Model Loss
                     if self.use_world_model:
-                         forward_model_loss = self.world.forward_model_loss()
+                         forward_model_loss = self.world.model_loss()
                     else:
                          forward_model_loss = 0
                     # ---------------------------------------------------------------------------------
                     # Image Model Loss
                     if self.use_image_model:
-                         image_model_loss = self.image.image_model_loss()
+                         image_model_loss = self.image.model_loss()
                     else:
                          image_model_loss = 0
                     #----------------------------------------------------------------------------------

@@ -27,7 +27,7 @@ class Policy_Model_Wrapper():
 		super(Policy_Model_Wrapper, self).__init__()
 		self.checkpoint_file = os.path.join(chkpt_dir, 'policy_model')
 		self.memory= ReplayMemoryPolicyModel(batch_size)
-		self.policy_model = LinearActorBaselineNetwork(input_dims,output_dims)
+		self.model = LinearActorBaselineNetwork(input_dims,output_dims)
 		
 		#Objective Functions Hyperparameters:
 		
@@ -49,7 +49,7 @@ class Policy_Model_Wrapper():
 			arg2 ([type]): [description] . Defaults to
 			arg3 ([type]): [description] . Defaults to
 		"""
-		torch.save(self.policy_model.state_dict(), self.checkpoint_file)
+		torch.save(self.model.state_dict(), self.checkpoint_file)
 
 	def load_checkpoint(self):
 		"""[summary]
@@ -59,10 +59,10 @@ class Policy_Model_Wrapper():
 			arg2 ([type]): [description] . Defaults to
 			arg3 ([type]): [description] . Defaults to
 		"""
-		self.policy_model.load_state_dict(torch.load(self.checkpoint_file))
+		self.model.load_state_dict(torch.load(self.checkpoint_file))
 
 #Learning different models (may be change to a differerent file)BEGIN--------------------------------------------------------------
-	def ppo_actor_loss(self,enc_state,action,old_action_log_prob,advantage):
+	def model_ppo_loss(self,enc_state,action,old_action_log_prob,advantage):
 		"""[loss function for ONLY the Actor ]
 
 		Args:
@@ -70,7 +70,7 @@ class Policy_Model_Wrapper():
 		arg ([type]): [description] . Defaults to
 		arg ([type]): [description] . Defaults to
 		"""  
-		dist = self.policy_model(enc_state)
+		dist = self.model(enc_state)
 		dist = Categorical(dist)
 		entropy = dist.entropy().mean()
 		new_action_log_prob = dist.log_prob(action)
