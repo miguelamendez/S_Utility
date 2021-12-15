@@ -215,7 +215,7 @@ def model(model_type,model_id,inout=None,values_ids=None,learn_mode=True,path=No
         return Model(model_id,arch,values_ids,learn_mode=learn_mode)
 
 #Example
-new_model=model("agent_nodes","simple_ac",learn_mode=True)
-X , y =torch.randn(4,128),torch.randn(4,1)
-print("Specs:",new_model.get_specs())
-new_model.update(X,y)
+#new_model=model("agent_nodes","simple_ac",learn_mode=True)
+#X , y =torch.randn(4,128),torch.randn(4,1)
+#print("Specs:",new_model.get_specs())
+#new_model.update(X,y)

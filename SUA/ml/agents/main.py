@@ -17,7 +17,7 @@ from data.envs.build import *
 from data.envs import config as cf
 
 #Import training functions
-from ml.train.dynamic import *
+from ml.functional.train_fn import *
 
 #Import data preprocessing functions (for external preprocessing)
 from data.utils.preprocessing import *
@@ -33,13 +33,13 @@ import matplotlib.pyplot as plt
 
 
 #Print information of availble envs:
-print("Available envs from Gym :\n",list(envs_dic["gym"]["envs"].keys()))
+print("Available envs from Gym :\n",envs_dic["gym"]["envs"].keys())
 #Print information of available agents:
-print("Avalilable agents : \n",list(agents_dic.keys()))
+print("Avalilable agents : \n",agents_dic.keys())
 print("\n")
 #Atari preprocessing wrapper
 
-def work(env_id,agent_id,ext_preproc=False,train=False,episodes=4,render=False):
+def work(env_id,agent_id,ext_preproc=False,test_mode=False,episodes=4,render=False):
     
     #Setting environment and getting appropriate information:
     print("Building Environment:")
@@ -80,4 +80,4 @@ def work(env_id,agent_id,ext_preproc=False,train=False,episodes=4,render=False):
         for i in data.keys():
             print(data[i][-1:])
 print("Initializing work function ########################################################")
-work(env_id='MsPacmanNoFrameskip-v4',agent_id="dummy",ext_preproc=True,episodes=2,render=False)
+work(env_id='MsPacmanNoFrameskip-v4',agent_id="dummy",test_mode=True,ext_preproc=True,episodes=2,render=True)
